@@ -1,4 +1,5 @@
 # Super-Resolution-Project
+
 # Image Super-Resolution: SRGAN vs. ESRGAN (4×)
 
 PyTorch implementations of **SRGAN** and **ESRGAN** for 4× single-image super-resolution, trained on DIV2K and compared with their pixel-loss (MSE / L1) baselines. The results show the classic **perception–distortion trade-off**: the GAN models that look sharpest get the lowest PSNR.
@@ -17,18 +18,18 @@ PyTorch implementations of **SRGAN** and **ESRGAN** for 4× single-image super-r
 | SRGAN warm-up ("MSE model") | MSE only | 25.45 |
 | **SRGAN** | MSE + VGG + adversarial | **25.57** |
 | ESRGAN | L1 + VGG (pre-activation) + RaGAN | 21.69 |
-| ESRGAN, pretrained weights\* | Released weights from [source], not trained here | 17.35 |
+| ESRGAN, official pretrained weights\* | Weights released by the ESRGAN authors ([xinntao/ESRGAN](https://github.com/xinntao/ESRGAN)), not trained here | 17.35 |
 
 *Average PSNR over 10 DIV2K validation images at full 2K resolution. Each image is downscaled 4× with bicubic interpolation, then upscaled back by the model.*
 
 ![PSNR results](images/psnr_results.png)
 
-\* Included as a reference point. Its unusually low PSNR most likely comes from a preprocessing mismatch with how these weights were trained (e.g. input range or colour order), not from the model itself.
+\* The official weights from the paper's authors, evaluated with our pipeline as a reference point. Their unusually low PSNR most likely comes from a preprocessing mismatch with how they were trained (e.g. input range or colour order), not from the model itself.
 
 **What the numbers show**
 
 - **Pixel-loss models win on PSNR.** PSNR rewards pixel-wise closeness, which is exactly what MSE minimises. SRGAN stays within 0.12 dB of its MSE warm-up because the adversarial term is weighted lightly (1e-5) and the GAN phase is short (20 epochs).
-- **ESRGAN scores ~3.9 dB lower but looks sharper.** Its perceptual and relativistic adversarial losses push it to generate high-frequency texture (fur, edges). These details look realistic but don't match the ground truth pixel by pixel, so PSNR penalises them.
+- **ESRGAN scores ~3.9 dB lower but looks sharper.** It spends most of its training in the GAN phase (100 GAN epochs after a 20-epoch L1 warm-up, versus 20 GAN epochs after a 100-epoch warm-up for SRGAN), and its perceptual and relativistic adversarial losses push it to generate high-frequency texture (fur, edges). These details look realistic but don't match the ground truth pixel by pixel, so PSNR penalises them.
 - **Takeaway:** PSNR alone is not enough to judge generative super-resolution. Perceptual metrics (e.g. LPIPS) or human evaluation are needed alongside it.
 
 ### Per-model outputs (baboon, 4×)
@@ -100,8 +101,8 @@ What changes from SRGAN:
 - **Perceptual loss:** VGG features taken **before** the activation, which keeps more low-level detail.
 - **Adversarial loss:** Relativistic average GAN (RaGAN): the discriminator predicts whether a real image is *more realistic than* the average fake, not just real vs. fake.
 - **Training:**
-  1. *Warm-up:* generator trained with L1 only for [N] epochs.
-  2. *GAN phase:* [N] epochs with `1e-2·L1 + VGG + 5e-3·RaGAN`, using mixed precision (AMP).
+  1. *Warm-up:* generator trained with L1 only for 20 epochs.
+  2. *GAN phase:* 100 epochs with `1e-2·L1 + VGG + 5e-3·RaGAN`, using mixed precision (AMP).
 
 ### Training settings
 
@@ -112,8 +113,8 @@ What changes from SRGAN:
 | Batch size | 16 | 16 |
 | Iterations per epoch | 50 | 50 |
 | Optimiser | Adam, lr 1e-4 | Adam, lr 1e-4 |
-| Warm-up epochs | 100 (MSE) | [N] (L1) |
-| GAN epochs | 20 | [N] |
+| Warm-up epochs | 100 (MSE) | 20 (L1) |
+| GAN epochs | 20 | 100 |
 | Hardware | Google Colab, NVIDIA T4 (~40 s/epoch) | Google Colab, NVIDIA T4 |
 
 ---
@@ -153,13 +154,13 @@ The notebook has five parts:
 - PSNR is computed on only 10 images; a standard benchmark (Set5, Set14, BSD100) would be more reliable.
 - No perceptual metric yet: adding **SSIM** and **LPIPS** would quantify ESRGAN's visual advantage.
 - The SRGAN GAN phase is short (20 epochs) with a small adversarial weight, so it stays close to the MSE baseline.
-- The pretrained ESRGAN weights should be re-checked with their expected input normalisation for a fair comparison.
+- The official ESRGAN weights should be re-evaluated with their expected input normalisation for a fair comparison with our trained ESRGAN.
 
 ---
 
 ## Authors
 
-[Names / team members]
+Ahmed Ayman Abdelhadi
 
 ## Acknowledgements
 
